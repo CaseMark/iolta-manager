@@ -1,0 +1,119 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Sharp Grey Professional Theme - No Color */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 9%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 9%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 9%;
+    
+    /* Primary: Pure dark grey */
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    
+    /* Secondary: Light grey */
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 9%;
+    
+    /* Muted: Soft grey */
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+    
+    /* Accent: Medium grey */
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 9%;
+    
+    /* Destructive: Dark grey (no red) */
+    --destructive: 0 0% 25%;
+    --destructive-foreground: 0 0% 98%;
+    
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 0 0% 9%;
+    --radius: 0.375rem;
+    
+    /* Custom semantic colors - all grey */
+    --success: 0 0% 35%;
+    --success-foreground: 0 0% 98%;
+    --warning: 0 0% 45%;
+    --warning-foreground: 0 0% 9%;
+  }
+
+  .dark {
+    --background: 0 0% 4%;
+    --foreground: 0 0% 98%;
+    
+    --card: 0 0% 4%;
+    --card-foreground: 0 0% 98%;
+    
+    --popover: 0 0% 4%;
+    --popover-foreground: 0 0% 98%;
+    
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 98%;
+    
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 65%;
+    
+    --accent: 0 0% 15%;
+    --accent-foreground: 0 0% 98%;
+    
+    --destructive: 0 0% 30%;
+    --destructive-foreground: 0 0% 98%;
+    
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
+    --ring: 0 0% 85%;
+    
+    --success: 0 0% 55%;
+    --success-foreground: 0 0% 9%;
+    --warning: 0 0% 55%;
+    --warning-foreground: 0 0% 9%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* Accounting table styles */
+.ledger-table {
+  @apply font-mono text-sm;
+}
+
+.ledger-table th,
+.ledger-table td {
+  @apply px-4 py-2;
+}
+
+.ledger-table .amount {
+  @apply text-right tabular-nums;
+}
+
+.ledger-table .credit {
+  @apply text-foreground font-medium;
+}
+
+.ledger-table .debit {
+  @apply text-muted-foreground;
+}
+
+.ledger-table .balance {
+  @apply font-semibold;
+}
