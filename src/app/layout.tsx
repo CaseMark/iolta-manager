@@ -21,7 +21,14 @@ export default function RootLayout({
         <div className="flex h-screen">
           <Sidebar />
           <main className="flex-1 overflow-auto bg-background">
-            {children}
+            <div className="min-h-full flex flex-col">
+              <div className="flex-1">
+                {children}
+              </div>
+              <footer className="bg-black text-white text-center py-1 text-xs">
+                powered with ❤️ by case.dev
+              </footer>
+            </div>
           </main>
         </div>
       </body>
