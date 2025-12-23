@@ -21,11 +21,22 @@ function LoginForm() {
         callbackUrl,
       });
 
+      console.log('signIn result:', result);
+
+      if (result?.error) {
+        console.error('signIn error:', result.error);
+        setIsLoading(false);
+        return;
+      }
+
       if (result?.ok) {
         router.push(callbackUrl);
         router.refresh();
+      } else {
+        setIsLoading(false);
       }
-    } catch {
+    } catch (error) {
+      console.error('signIn exception:', error);
       setIsLoading(false);
     }
   };

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, matters, transactions, holds } from '@/db';
+import { db, matters } from '@/db';
 import { eq } from 'drizzle-orm';
 import { logAuditEvent } from '@/lib/audit';
 
@@ -39,11 +39,11 @@ interface ExtractedDocumentData {
 // POST /api/matters/[id]/analyze - Analyze document and extract transactions/holds for existing matter
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id: matterId } = await params;
+  
   try {
-    const matterId = params.id;
-
     // Verify matter exists
     const matterResult = await db
       .select()

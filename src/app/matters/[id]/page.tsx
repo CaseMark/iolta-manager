@@ -122,9 +122,10 @@ async function getMatter(id: string) {
 export default async function MatterDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const matter = await getMatter(params.id);
+  const { id } = await params;
+  const matter = await getMatter(id);
 
   if (!matter) {
     notFound();

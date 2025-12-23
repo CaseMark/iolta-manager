@@ -39,11 +39,11 @@ interface ImportRequest {
 // POST /api/matters/[id]/analyze/confirm - Import selected transactions and holds
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id: matterId } = await params;
+  
   try {
-    const matterId = params.id;
-
     // Verify matter exists
     const matterResult = await db
       .select()

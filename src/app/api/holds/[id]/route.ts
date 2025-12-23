@@ -6,8 +6,10 @@ import { logAuditEvent } from '@/lib/audit';
 // GET /api/holds/[id] - Get a single hold
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+  
   try {
     const hold = await db
       .select({
@@ -26,7 +28,7 @@ export async function GET(
       })
       .from(holds)
       .leftJoin(matters, eq(holds.matterId, matters.id))
-      .where(eq(holds.id, params.id))
+      .where(eq(holds.id, id))
       .limit(1);
 
     if (hold.length === 0) {
@@ -49,8 +51,10 @@ export async function GET(
 // PUT /api/holds/[id] - Update a hold (for status changes)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+  
   try {
     const body = await request.json();
     const { status, releaseReason, releasedBy } = body;
@@ -58,7 +62,7 @@ export async function PUT(
     const existingHold = await db
       .select()
       .from(holds)
-      .where(eq(holds.id, params.id))
+      .where(eq(holds.id, id))
       .limit(1);
 
     if (existingHold.length === 0) {
@@ -87,13 +91,13 @@ export async function PUT(
     const updatedHold = await db
       .update(holds)
       .set(updateData)
-      .where(eq(holds.id, params.id))
+      .where(eq(holds.id, id))
       .returning();
 
     // Log audit event
     await logAuditEvent({
       entityType: 'hold',
-      entityId: params.id,
+      entityId: id,
       action: 'update',
       details: { 
         previousStatus: existingHold[0].status,
@@ -116,13 +120,15 @@ export async function PUT(
 // DELETE /api/holds/[id] - Cancel a hold
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+  
   try {
     const existingHold = await db
       .select()
       .from(holds)
-      .where(eq(holds.id, params.id))
+      .where(eq(holds.id, id))
       .limit(1);
 
     if (existingHold.length === 0) {
@@ -144,12 +150,12 @@ export async function DELETE(
       .set({
         status: 'cancelled',
       })
-      .where(eq(holds.id, params.id));
+      .where(eq(holds.id, id));
 
     // Log audit event
     await logAuditEvent({
       entityType: 'hold',
-      entityId: params.id,
+      entityId: id,
       action: 'delete',
       details: { 
         previousStatus: existingHold[0].status,

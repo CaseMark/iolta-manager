@@ -7,8 +7,10 @@ import { getCaseDevService, CaseDevApiException } from '@/lib/casedev';
 // POST /api/holds/[id]/release - Release a hold (full or partial)
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+  
   try {
     const body = await request.json();
     const { releaseReason, releasedBy, releaseAmount } = body;
@@ -33,7 +35,7 @@ export async function POST(
       })
       .from(holds)
       .leftJoin(matters, eq(holds.matterId, matters.id))
-      .where(eq(holds.id, params.id))
+      .where(eq(holds.id, id))
       .limit(1);
 
     if (existingHold.length === 0) {
@@ -104,7 +106,7 @@ export async function POST(
           amount: remainingAmount,
           releaseReason: `Partial release of ${amountToRelease / 100}: ${releaseReason}`,
         })
-        .where(eq(holds.id, params.id))
+        .where(eq(holds.id, id))
         .returning();
     } else {
       // Full release
@@ -116,14 +118,14 @@ export async function POST(
           releasedBy: releasedBy || null,
           releaseReason,
         })
-        .where(eq(holds.id, params.id))
+        .where(eq(holds.id, id))
         .returning();
     }
 
     // Log audit event
     await logAuditEvent({
       entityType: 'hold',
-      entityId: params.id,
+      entityId: id,
       action: isPartialRelease ? 'partial_release' : 'release',
       details: { 
         originalAmount: existingHold[0].amount,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,8 +24,9 @@ interface Client {
 export default function EditClientPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = use(params);
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -44,7 +45,7 @@ export default function EditClientPage({
   useEffect(() => {
     async function fetchClient() {
       try {
-        const response = await fetch(`/api/clients/${params.id}`);
+        const response = await fetch(`/api/clients/${id}`);
         if (!response.ok) {
           throw new Error("Client not found");
         }
@@ -65,7 +66,7 @@ export default function EditClientPage({
       }
     }
     fetchClient();
-  }, [params.id]);
+  }, [id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,7 +74,7 @@ export default function EditClientPage({
     setError(null);
 
     try {
-      const response = await fetch(`/api/clients/${params.id}`, {
+      const response = await fetch(`/api/clients/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -84,7 +85,7 @@ export default function EditClientPage({
         throw new Error(data.error || "Failed to update client");
       }
 
-      router.push(`/clients/${params.id}`);
+      router.push(`/clients/${id}`);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update client");
@@ -118,7 +119,7 @@ export default function EditClientPage({
     <div className="p-8">
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
-        <Link href={`/clients/${params.id}`}>
+        <Link href={`/clients/${id}`}>
           <Button variant="ghost" size="icon">
             <ArrowLeft className="h-5 w-5" />
           </Button>
@@ -227,7 +228,7 @@ export default function EditClientPage({
                   </>
                 )}
               </Button>
-              <Link href={`/clients/${params.id}`}>
+              <Link href={`/clients/${id}`}>
                 <Button type="button" variant="outline">
                   Cancel
                 </Button>

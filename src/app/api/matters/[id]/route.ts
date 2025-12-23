@@ -6,8 +6,10 @@ import { logAuditEvent, getChanges } from '@/lib/audit';
 // GET /api/matters/[id] - Get a single matter with details
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+  
   try {
     const matter = await db
       .select({
@@ -28,7 +30,7 @@ export async function GET(
       })
       .from(matters)
       .leftJoin(clients, eq(matters.clientId, clients.id))
-      .where(eq(matters.id, params.id))
+      .where(eq(matters.id, id))
       .limit(1);
 
     if (matter.length === 0) {
@@ -45,7 +47,7 @@ export async function GET(
         disbursements: sql<number>`COALESCE(SUM(CASE WHEN type = 'disbursement' THEN amount ELSE 0 END), 0)`,
       })
       .from(transactions)
-      .where(eq(transactions.matterId, params.id));
+      .where(eq(transactions.matterId, id));
 
     const deposits = balanceResult[0]?.deposits || 0;
     const disbursements = balanceResult[0]?.disbursements || 0;
@@ -55,7 +57,7 @@ export async function GET(
     const matterTransactions = await db
       .select()
       .from(transactions)
-      .where(eq(transactions.matterId, params.id))
+      .where(eq(transactions.matterId, id))
       .orderBy(desc(transactions.createdAt));
 
     return NextResponse.json({
@@ -77,8 +79,10 @@ export async function GET(
 // PUT /api/matters/[id] - Update a matter
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+  
   try {
     const body = await request.json();
     const { name, description, status, practiceArea, responsibleAttorney } = body;
@@ -86,7 +90,7 @@ export async function PUT(
     const existingMatter = await db
       .select()
       .from(matters)
-      .where(eq(matters.id, params.id))
+      .where(eq(matters.id, id))
       .limit(1);
 
     if (existingMatter.length === 0) {
@@ -114,7 +118,7 @@ export async function PUT(
     const updatedMatter = await db
       .update(matters)
       .set(updateData)
-      .where(eq(matters.id, params.id))
+      .where(eq(matters.id, id))
       .returning();
 
     // Log audit event with changes
@@ -127,7 +131,7 @@ export async function PUT(
     if (Object.keys(changes).length > 0) {
       await logAuditEvent({
         entityType: 'matter',
-        entityId: params.id,
+        entityId: id,
         action: 'update',
         details: { 
           matterName: existingMatter[0].name,
@@ -149,13 +153,15 @@ export async function PUT(
 // DELETE /api/matters/[id] - Close a matter
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+  
   try {
     const existingMatter = await db
       .select()
       .from(matters)
-      .where(eq(matters.id, params.id))
+      .where(eq(matters.id, id))
       .limit(1);
 
     if (existingMatter.length === 0) {
@@ -172,7 +178,7 @@ export async function DELETE(
         disbursements: sql<number>`COALESCE(SUM(CASE WHEN type = 'disbursement' THEN amount ELSE 0 END), 0)`,
       })
       .from(transactions)
-      .where(eq(transactions.matterId, params.id));
+      .where(eq(transactions.matterId, id));
 
     const balance = (balanceResult[0]?.deposits || 0) - (balanceResult[0]?.disbursements || 0);
 
@@ -191,12 +197,12 @@ export async function DELETE(
         closeDate: new Date(),
         updatedAt: new Date(),
       })
-      .where(eq(matters.id, params.id));
+      .where(eq(matters.id, id));
 
     // Log audit event
     await logAuditEvent({
       entityType: 'matter',
-      entityId: params.id,
+      entityId: id,
       action: 'delete',
       details: { 
         matterName: existingMatter[0].name,

@@ -6,13 +6,15 @@ import { logAuditEvent, getChanges } from '@/lib/audit';
 // GET /api/clients/[id] - Get a single client
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+  
   try {
     const client = await db
       .select()
       .from(clients)
-      .where(eq(clients.id, params.id))
+      .where(eq(clients.id, id))
       .limit(1);
 
     if (client.length === 0) {
@@ -35,8 +37,10 @@ export async function GET(
 // PUT /api/clients/[id] - Update a client
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+  
   try {
     const body = await request.json();
     const { name, email, phone, address, notes, status } = body;
@@ -44,7 +48,7 @@ export async function PUT(
     const existingClient = await db
       .select()
       .from(clients)
-      .where(eq(clients.id, params.id))
+      .where(eq(clients.id, id))
       .limit(1);
 
     if (existingClient.length === 0) {
@@ -67,7 +71,7 @@ export async function PUT(
     const updatedClient = await db
       .update(clients)
       .set(updateData)
-      .where(eq(clients.id, params.id))
+      .where(eq(clients.id, id))
       .returning();
 
     // Log audit event with changes
@@ -80,7 +84,7 @@ export async function PUT(
     if (Object.keys(changes).length > 0) {
       await logAuditEvent({
         entityType: 'client',
-        entityId: params.id,
+        entityId: id,
         action: 'update',
         details: { changes },
       });
@@ -99,13 +103,15 @@ export async function PUT(
 // DELETE /api/clients/[id] - Archive a client (soft delete)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+  
   try {
     const existingClient = await db
       .select()
       .from(clients)
-      .where(eq(clients.id, params.id))
+      .where(eq(clients.id, id))
       .limit(1);
 
     if (existingClient.length === 0) {
@@ -122,12 +128,12 @@ export async function DELETE(
         status: 'archived',
         updatedAt: new Date(),
       })
-      .where(eq(clients.id, params.id));
+      .where(eq(clients.id, id));
 
     // Log audit event
     await logAuditEvent({
       entityType: 'client',
-      entityId: params.id,
+      entityId: id,
       action: 'delete',
       details: { 
         clientName: existingClient[0].name,

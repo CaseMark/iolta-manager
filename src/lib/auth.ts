@@ -13,8 +13,10 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         demo: { label: 'Demo', type: 'text' },
       },
-      async authorize() {
+      async authorize(credentials) {
         // Demo mode: Always approve access
+        // credentials parameter is required by NextAuth even if unused
+        console.log('Demo login attempted', credentials?.demo);
         return {
           id: 'demo-user',
           email: 'demo@example.com',
