@@ -112,8 +112,8 @@ States not listed above will use ABA Model Rules as a baseline for compliance gu
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
-cd IOLTAAcctMan
+git clone https://github.com/CaseMark/iolta-manager.git
+cd iolta-manager
 ```
 
 2. Install dependencies:
