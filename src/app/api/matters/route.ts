@@ -5,6 +5,29 @@ import { desc, eq, sql } from 'drizzle-orm';
 import { generateMatterNumber } from '@/lib/utils';
 import { logAuditEvent } from '@/lib/audit';
 import { getCaseDevService } from '@/lib/casedev';
+import { z } from 'zod';
+
+// Validation schema for creating a new client inline
+const newClientSchema = z.object({
+  name: z.string().min(1).max(255),
+  email: z.string().email().max(255).optional().nullable(),
+  phone: z.string().max(50).optional().nullable(),
+  address: z.string().max(500).optional().nullable(),
+  notes: z.string().max(2000).optional().nullable(),
+});
+
+// Validation schema for creating a matter
+const createMatterSchema = z.object({
+  clientId: z.string().uuid('Invalid client ID').optional(),
+  name: z.string().min(1, 'Matter name is required').max(255),
+  description: z.string().max(2000).optional().nullable(),
+  practiceArea: z.string().max(100).optional().nullable(),
+  responsibleAttorney: z.string().max(255).optional().nullable(),
+  newClient: newClientSchema.optional(),
+}).refine(
+  (data) => data.clientId || data.newClient,
+  { message: 'Either clientId or newClient must be provided' }
+);
 
 // GET /api/matters - List all matters with client info and balances
 export async function GET() {
@@ -65,17 +88,26 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    
+    // Validate input
+    const validationResult = createMatterSchema.safeParse(body);
+    if (!validationResult.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: validationResult.error.issues },
+        { status: 400 }
+      );
+    }
+
     const { 
       clientId, 
       name, 
       description, 
       practiceArea, 
       responsibleAttorney,
-      // Optional: create new client inline
       newClient 
-    } = body;
+    } = validationResult.data;
 
-    let finalClientId = clientId;
+    let finalClientId: string = clientId || '';
 
     // If newClient data is provided, create the client first
     if (newClient && !clientId) {
@@ -95,16 +127,10 @@ export async function POST(request: NextRequest) {
       finalClientId = newClientRecord.id;
     }
 
+    // Ensure we have a client ID (validation should have caught this, but double-check)
     if (!finalClientId) {
       return NextResponse.json(
         { error: 'Client ID is required' },
-        { status: 400 }
-      );
-    }
-
-    if (!name) {
-      return NextResponse.json(
-        { error: 'Matter name is required' },
         { status: 400 }
       );
     }

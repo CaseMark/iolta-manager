@@ -10,7 +10,7 @@ import { Select } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { 
   ClipboardList, User, FileText, DollarSign, Lock, Settings, BarChart, 
-  Search, Trash2, Filter, X, AlertTriangle, CheckSquare, Square, RefreshCw
+  Search, Filter, X, RefreshCw
 } from "lucide-react";
 
 interface AuditLog {
@@ -138,10 +138,6 @@ export default function AuditPage() {
   const [stats, setStats] = useState<Stats>({ total: 0, creates: 0, updates: 0, deletes: 0 });
   const [pagination, setPagination] = useState<Pagination>({ total: 0, limit: 200, offset: 0, hasMore: false });
   const [loading, setLoading] = useState(true);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deleteType, setDeleteType] = useState<'selected' | 'all' | 'before'>('selected');
-  const [deleteBeforeDate, setDeleteBeforeDate] = useState('');
 
   // Filters
   const [search, setSearch] = useState('');
@@ -178,58 +174,6 @@ export default function AuditPage() {
   useEffect(() => {
     fetchLogs();
   }, [fetchLogs]);
-
-  const handleSelectAll = () => {
-    if (selectedIds.size === logs.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(logs.map(l => l.id)));
-    }
-  };
-
-  const handleSelectOne = (id: string) => {
-    const newSelected = new Set(selectedIds);
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
-    } else {
-      newSelected.add(id);
-    }
-    setSelectedIds(newSelected);
-  };
-
-  const handleDelete = async () => {
-    try {
-      let body: Record<string, unknown> = {};
-      
-      if (deleteType === 'all') {
-        body = { deleteAll: true };
-      } else if (deleteType === 'before' && deleteBeforeDate) {
-        body = { beforeDate: deleteBeforeDate };
-      } else if (deleteType === 'selected' && selectedIds.size > 0) {
-        body = { ids: Array.from(selectedIds) };
-      } else {
-        return;
-      }
-
-      const response = await fetch('/api/audit', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      if (response.ok) {
-        setSelectedIds(new Set());
-        setShowDeleteConfirm(false);
-        setDeleteBeforeDate('');
-        fetchLogs();
-      } else {
-        alert('Failed to delete audit logs');
-      }
-    } catch (error) {
-      console.error('Error deleting audit logs:', error);
-      alert('Failed to delete audit logs');
-    }
-  };
 
   const clearFilters = () => {
     setSearch('');
@@ -389,82 +333,6 @@ export default function AuditPage() {
         </Card>
       </div>
 
-      {/* Delete Actions */}
-      {selectedIds.size > 0 && (
-        <div className="mb-6 flex items-center justify-between px-4 py-3 bg-muted rounded-lg border border-border">
-          <span className="text-sm text-muted-foreground">
-            {selectedIds.size} {selectedIds.size === 1 ? 'item' : 'items'} selected
-          </span>
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSelectedIds(new Set())}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              Clear selection
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => {
-                setDeleteType('selected');
-                setShowDeleteConfirm(true);
-              }}
-              className="px-4"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete Selected
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-md mx-4">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5" />
-                Confirm Deletion
-              </CardTitle>
-              <CardDescription>
-                {deleteType === 'all' && 'This will permanently delete ALL audit logs. This action cannot be undone.'}
-                {deleteType === 'selected' && `This will permanently delete ${selectedIds.size} selected audit log(s).`}
-                {deleteType === 'before' && 'This will permanently delete all audit logs before the specified date.'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {deleteType === 'before' && (
-                <div className="mb-4">
-                  <Label htmlFor="deleteBeforeDate">Delete logs before:</Label>
-                  <Input
-                    id="deleteBeforeDate"
-                    type="date"
-                    value={deleteBeforeDate}
-                    onChange={(e) => setDeleteBeforeDate(e.target.value)}
-                  />
-                </div>
-              )}
-              <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>
-                  Cancel
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={handleDelete}
-                  disabled={deleteType === 'before' && !deleteBeforeDate}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
       {/* Audit Log Table */}
       <Card>
         <CardHeader>
@@ -474,6 +342,9 @@ export default function AuditPage() {
           </CardTitle>
           <CardDescription>
             {hasActiveFilters ? `Showing ${logs.length} filtered results` : `Showing ${logs.length} of ${pagination.total} events`}
+            <span className="block text-xs mt-1 text-muted-foreground">
+              Audit logs are immutable and cannot be deleted for IOLTA compliance.
+            </span>
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -494,15 +365,6 @@ export default function AuditPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-10">
-                    <button onClick={handleSelectAll} className="p-1">
-                      {selectedIds.size === logs.length ? (
-                        <CheckSquare className="h-4 w-4 text-primary" />
-                      ) : (
-                        <Square className="h-4 w-4 text-muted-foreground" />
-                      )}
-                    </button>
-                  </TableHead>
                   <TableHead>Timestamp</TableHead>
                   <TableHead>Entity</TableHead>
                   <TableHead>Action</TableHead>
@@ -512,16 +374,7 @@ export default function AuditPage() {
               </TableHeader>
               <TableBody>
                 {logs.map((log) => (
-                    <TableRow key={log.id} className={selectedIds.has(log.id) ? 'bg-primary/5' : ''}>
-                    <TableCell>
-                      <button onClick={() => handleSelectOne(log.id)} className="p-1">
-                        {selectedIds.has(log.id) ? (
-                          <CheckSquare className="h-4 w-4 text-primary" />
-                        ) : (
-                          <Square className="h-4 w-4 text-muted-foreground" />
-                        )}
-                      </button>
-                    </TableCell>
+                  <TableRow key={log.id}>
                     <TableCell className="whitespace-nowrap text-sm">
                       {formatDate(log.timestamp)}
                       <br />

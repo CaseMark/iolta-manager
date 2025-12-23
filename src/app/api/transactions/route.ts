@@ -4,6 +4,21 @@ import { v4 as uuidv4 } from 'uuid';
 import { desc, eq, and, gte, lte, sql } from 'drizzle-orm';
 import { logAuditEvent } from '@/lib/audit';
 import { getCaseDevService, CaseDevApiException } from '@/lib/casedev';
+import { z } from 'zod';
+
+// Validation schema for creating a transaction
+const createTransactionSchema = z.object({
+  matterId: z.string().uuid('Invalid matter ID'),
+  type: z.enum(['deposit', 'disbursement'], { 
+    errorMap: () => ({ message: 'Type must be deposit or disbursement' })
+  }),
+  amount: z.number().positive('Amount must be greater than 0').max(100000000, 'Amount exceeds maximum'),
+  description: z.string().min(1, 'Description is required').max(500),
+  payee: z.string().max(255).optional().nullable(),
+  payor: z.string().max(255).optional().nullable(),
+  checkNumber: z.string().max(50).optional().nullable(),
+  reference: z.string().max(100).optional().nullable(),
+});
 
 // GET /api/transactions - List all transactions with filters
 export async function GET(request: NextRequest) {
@@ -90,6 +105,16 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    
+    // Validate input
+    const validationResult = createTransactionSchema.safeParse(body);
+    if (!validationResult.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: validationResult.error.issues },
+        { status: 400 }
+      );
+    }
+
     const { 
       matterId, 
       type, 
@@ -99,35 +124,7 @@ export async function POST(request: NextRequest) {
       payor, 
       checkNumber, 
       reference 
-    } = body;
-
-    if (!matterId) {
-      return NextResponse.json(
-        { error: 'Matter ID is required' },
-        { status: 400 }
-      );
-    }
-
-    if (!type || !['deposit', 'disbursement'].includes(type)) {
-      return NextResponse.json(
-        { error: 'Valid transaction type (deposit or disbursement) is required' },
-        { status: 400 }
-      );
-    }
-
-    if (!amount || amount <= 0) {
-      return NextResponse.json(
-        { error: 'Valid positive amount is required' },
-        { status: 400 }
-      );
-    }
-
-    if (!description) {
-      return NextResponse.json(
-        { error: 'Description is required' },
-        { status: 400 }
-      );
-    }
+    } = validationResult.data;
 
     // Verify matter exists and is open
     const matter = await db

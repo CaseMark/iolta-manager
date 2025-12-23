@@ -31,7 +31,13 @@ export function Sidebar() {
   const [firmName, setFirmName] = useState<string>("IOLTA Manager");
   const [firmLogo, setFirmLogo] = useState<string | null>(null);
 
+  // Don't render sidebar on login page
+  const isLoginPage = pathname === '/login' || pathname.startsWith('/login');
+
   useEffect(() => {
+    // Skip fetching settings on login page
+    if (isLoginPage) return;
+    
     async function fetchSettings() {
       try {
         const response = await fetch("/api/settings");
@@ -49,7 +55,12 @@ export function Sidebar() {
       }
     }
     fetchSettings();
-  }, []);
+  }, [isLoginPage]);
+
+  // Hide sidebar on login page
+  if (isLoginPage) {
+    return null;
+  }
 
   return (
     <div className="flex h-full w-64 flex-col bg-neutral-950 border-r border-neutral-800">

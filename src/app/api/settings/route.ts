@@ -3,8 +3,25 @@ import { db, trustAccountSettings } from '@/db';
 import { v4 as uuidv4 } from 'uuid';
 import { eq } from 'drizzle-orm';
 import { logAuditEvent, getChanges } from '@/lib/audit';
+import { z } from 'zod';
 
-// GET /api/settings - Get current settings
+// Validation schema for settings
+const settingsSchema = z.object({
+  firmName: z.string().max(255).optional().nullable(),
+  firmLogo: z.string().max(1000000).optional().nullable(), // ~750KB base64
+  bankName: z.string().max(255).optional().nullable(),
+  accountNumber: z.string().max(50).optional().nullable(),
+  routingNumber: z.string().max(20).optional().nullable(),
+  state: z.string().max(100).optional().nullable(),
+});
+
+// Helper to mask sensitive data
+function maskSensitiveData(value: string | null): string | null {
+  if (!value || value.length < 4) return value;
+  return '••••' + value.slice(-4);
+}
+
+// GET /api/settings - Get current settings (with masked sensitive data)
 export async function GET() {
   try {
     const settings = await db.select().from(trustAccountSettings).limit(1);
@@ -13,7 +30,14 @@ export async function GET() {
       return NextResponse.json(null);
     }
 
-    return NextResponse.json(settings[0]);
+    // Mask sensitive financial data before returning
+    const maskedSettings = {
+      ...settings[0],
+      accountNumber: maskSensitiveData(settings[0].accountNumber),
+      routingNumber: maskSensitiveData(settings[0].routingNumber),
+    };
+
+    return NextResponse.json(maskedSettings);
   } catch (error) {
     console.error('Error fetching settings:', error);
     return NextResponse.json(
@@ -27,6 +51,16 @@ export async function GET() {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
+    
+    // Validate input
+    const validationResult = settingsSchema.safeParse(body);
+    if (!validationResult.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: validationResult.error.issues },
+        { status: 400 }
+      );
+    }
+
     const { 
       firmName, 
       firmLogo,
@@ -34,9 +68,7 @@ export async function PUT(request: NextRequest) {
       accountNumber, 
       routingNumber, 
       state,
-      casedevTrustAccountId,
-      casedevOperatingAccountId,
-    } = body;
+    } = validationResult.data;
 
     const now = new Date();
 
@@ -53,8 +85,6 @@ export async function PUT(request: NextRequest) {
         accountNumber: accountNumber || null,
         routingNumber: routingNumber || null,
         state: state || null,
-        casedevTrustAccountId: casedevTrustAccountId || null,
-        casedevOperatingAccountId: casedevOperatingAccountId || null,
         createdAt: now,
         updatedAt: now,
       };
@@ -81,8 +111,6 @@ export async function PUT(request: NextRequest) {
         firmName: firmName ?? existingSettings[0].firmName,
         bankName: bankName ?? existingSettings[0].bankName,
         state: state ?? existingSettings[0].state,
-        casedevTrustAccountId: casedevTrustAccountId ?? existingSettings[0].casedevTrustAccountId,
-        casedevOperatingAccountId: casedevOperatingAccountId ?? existingSettings[0].casedevOperatingAccountId,
         updatedAt: now,
       };
 

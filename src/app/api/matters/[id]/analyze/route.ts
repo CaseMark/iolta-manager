@@ -70,13 +70,37 @@ export async function POST(
       );
     }
 
-    // Validate file type
+    // Validate file size (max 10MB)
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { error: 'File size exceeds 10MB limit' },
+        { status: 400 }
+      );
+    }
+
+    // Validate file type by extension
     const fileExtension = file.name.split('.').pop()?.toLowerCase();
     const allowedExtensions = ['pdf', 'txt', 'docx', 'doc'];
     
     if (!allowedExtensions.includes(fileExtension || '')) {
       return NextResponse.json(
         { error: 'Invalid file type. Supported formats: PDF, TXT, DOCX' },
+        { status: 400 }
+      );
+    }
+
+    // Validate MIME type
+    const allowedMimeTypes = [
+      'application/pdf',
+      'text/plain',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/msword',
+    ];
+    
+    if (file.type && !allowedMimeTypes.includes(file.type)) {
+      return NextResponse.json(
+        { error: `Invalid file MIME type: ${file.type}. Supported types: PDF, TXT, DOCX` },
         { status: 400 }
       );
     }

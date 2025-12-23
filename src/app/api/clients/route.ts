@@ -3,6 +3,16 @@ import { db, clients } from '@/db';
 import { v4 as uuidv4 } from 'uuid';
 import { desc } from 'drizzle-orm';
 import { logAuditEvent } from '@/lib/audit';
+import { z } from 'zod';
+
+// Validation schema for creating a client
+const createClientSchema = z.object({
+  name: z.string().min(1, 'Client name is required').max(255),
+  email: z.string().email('Invalid email format').max(255).optional().nullable(),
+  phone: z.string().max(50).optional().nullable(),
+  address: z.string().max(500).optional().nullable(),
+  notes: z.string().max(2000).optional().nullable(),
+});
 
 // GET /api/clients - List all clients
 export async function GET() {
@@ -26,14 +36,17 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, email, phone, address, notes } = body;
-
-    if (!name) {
+    
+    // Validate input
+    const validationResult = createClientSchema.safeParse(body);
+    if (!validationResult.success) {
       return NextResponse.json(
-        { error: 'Client name is required' },
+        { error: 'Invalid input', details: validationResult.error.issues },
         { status: 400 }
       );
     }
+
+    const { name, email, phone, address, notes } = validationResult.data;
 
     const now = new Date();
     const newClient = {

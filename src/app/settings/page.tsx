@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
+import { signOut } from "next-auth/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Save, Loader2, CheckCircle, Upload, X, Eye, EyeOff, Info } from "lucide-react";
+import { Save, Loader2, CheckCircle, Upload, X, Eye, EyeOff, Info, LogOut } from "lucide-react";
 
 // All US states
 const ALL_US_STATES = [
@@ -499,6 +500,33 @@ export default function SettingsPage() {
                   Other states will use ABA Model Rules as a baseline.
                 </p>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Demo Session */}
+          <Card className="border-gray-200 bg-gray-50">
+            <CardHeader>
+              <CardTitle className="text-gray-700">Demo Session</CardTitle>
+              <CardDescription>
+                You are currently logged into the demo instance
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600 mb-4">
+                This is a demonstration environment. All data is for testing purposes only. 
+                Do not enter real client information.
+              </p>
+              <Button 
+                variant="outline" 
+                onClick={async () => {
+                  await signOut({ redirect: false });
+                  window.location.href = '/login';
+                }}
+                className="w-full sm:w-auto"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Log Out of Demo
+              </Button>
             </CardContent>
           </Card>
         </div>

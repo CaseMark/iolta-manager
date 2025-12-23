@@ -4,6 +4,17 @@ import { v4 as uuidv4 } from 'uuid';
 import { desc, eq, sql, and } from 'drizzle-orm';
 import { logAuditEvent } from '@/lib/audit';
 import { getCaseDevService, CaseDevApiException } from '@/lib/casedev';
+import { z } from 'zod';
+
+// Validation schema for creating a hold
+const createHoldSchema = z.object({
+  matterId: z.string().uuid('Invalid matter ID'),
+  amount: z.number().positive('Amount must be greater than 0').max(100000000, 'Amount exceeds maximum'),
+  type: z.enum(['retainer', 'settlement', 'escrow', 'compliance'], {
+    errorMap: () => ({ message: 'Type must be retainer, settlement, escrow, or compliance' })
+  }),
+  description: z.string().min(1, 'Description is required').max(500),
+});
 
 // GET /api/holds - List all holds with filters
 export async function GET(request: NextRequest) {
@@ -64,35 +75,17 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { matterId, amount, type, description } = body;
-
-    if (!matterId) {
+    
+    // Validate input
+    const validationResult = createHoldSchema.safeParse(body);
+    if (!validationResult.success) {
       return NextResponse.json(
-        { error: 'Matter ID is required' },
+        { error: 'Invalid input', details: validationResult.error.issues },
         { status: 400 }
       );
     }
 
-    if (!amount || amount <= 0) {
-      return NextResponse.json(
-        { error: 'Valid positive amount is required' },
-        { status: 400 }
-      );
-    }
-
-    if (!type || !['retainer', 'settlement', 'escrow', 'compliance'].includes(type)) {
-      return NextResponse.json(
-        { error: 'Valid hold type (retainer, settlement, escrow, compliance) is required' },
-        { status: 400 }
-      );
-    }
-
-    if (!description) {
-      return NextResponse.json(
-        { error: 'Description is required' },
-        { status: 400 }
-      );
-    }
+    const { matterId, amount, type, description } = validationResult.data;
 
     // Verify matter exists and is open
     const matter = await db

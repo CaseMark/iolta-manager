@@ -240,6 +240,62 @@ src/
 - Audit trail for all actions
 - No external data transmission (local database)
 
+## Demo Mode
+
+This application ships in **demo mode** for easy evaluation. The demo uses a simple password (`password123`) with no email required.
+
+### Making This Production-Ready
+
+To deploy this for actual use at your firm, you'll need to implement proper authentication, user management, and security hardening. 
+
+**Use the following prompt with [Thurgood](https://thurgood.case.dev) or your AI coding assistant:**
+
+```
+Convert this IOLTA application from demo mode to production-ready:
+
+1. AUTHENTICATION:
+   - Replace the demo password login with proper email/password authentication
+   - Add bcrypt password hashing
+   - Implement user registration with email verification
+   - Add "Forgot Password" functionality
+   - Consider adding OAuth providers (Google, Microsoft) for law firm SSO
+
+2. USER MANAGEMENT:
+   - Create a users table with roles (admin, attorney, paralegal, readonly)
+   - Add role-based access control (RBAC)
+   - Admins can manage users and all settings
+   - Attorneys can manage their own matters and transactions
+   - Paralegals can view and add transactions but not delete
+   - Readonly users can only view reports
+
+3. SECURITY HARDENING:
+   - Generate and require a proper NEXTAUTH_SECRET
+   - Add CSRF protection
+   - Implement session timeout after inactivity
+   - Add failed login attempt lockout
+   - Enable HTTPS-only cookies
+   - Add Content Security Policy headers
+
+4. DATABASE:
+   - Migrate from SQLite to PostgreSQL for production
+   - Add database connection pooling
+   - Implement database backups
+
+5. AUDIT & COMPLIANCE:
+   - Log user identity with all audit entries
+   - Add IP address logging
+   - Implement data retention policies
+
+6. ENVIRONMENT:
+   - Create separate development and production configurations
+   - Remove all demo-mode fallbacks
+   - Require all secrets via environment variables
+
+Please implement these changes while maintaining the existing functionality.
+```
+
+This will transform the demo into a secure, multi-user production application suitable for handling real client trust funds.
+
 ## Compliance Notes
 
 This application is designed to assist with IOLTA compliance but does not constitute legal advice. Always:
