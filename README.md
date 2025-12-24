@@ -95,18 +95,20 @@ States not listed above will use ABA Model Rules as a baseline for compliance gu
 
 ## Technology Stack
 
-- **Framework**: Next.js 14 (App Router)
+- **Framework**: Next.js 15 (App Router)
 - **Language**: TypeScript
-- **Database**: SQLite with Drizzle ORM
+- **Database**: PostgreSQL with Drizzle ORM
 - **Styling**: Tailwind CSS
-- **UI Components**: Custom components with Radix UI primitives
+- **Authentication**: NextAuth.js
 - **Icons**: Lucide React
+- **PDF Generation**: React PDF
 
 ## Getting Started
 
 ### Prerequisites
 - Node.js 18+ 
 - npm or yarn
+- PostgreSQL 14+
 
 ### Installation
 
@@ -277,9 +279,9 @@ Convert this IOLTA application from demo mode to production-ready:
    - Add Content Security Policy headers
 
 4. DATABASE:
-   - Migrate from SQLite to PostgreSQL for production
-   - Add database connection pooling
+   - Configure database connection pooling
    - Implement database backups
+   - Set up proper PostgreSQL user permissions
 
 5. AUDIT & COMPLIANCE:
    - Log user identity with all audit entries
@@ -296,6 +298,18 @@ Please implement these changes while maintaining the existing functionality.
 
 This will transform the demo into a secure, multi-user production application suitable for handling real client trust funds.
 
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+Please make sure to update tests as appropriate and adhere to the existing code style.
+
 ## Compliance Notes
 
 This application is designed to assist with IOLTA compliance but does not constitute legal advice. Always:
@@ -307,8 +321,24 @@ This application is designed to assist with IOLTA compliance but does not consti
 
 ## License
 
-[Add your license here]
+This project is licensed under the Apache License, Version 2.0. See the [LICENSE](LICENSE) file for details.
+
+```
+Copyright 2024 CaseMark
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+```
 
 ## Support
 
-For questions or issues, please [contact information or issue tracker link].
+For questions or issues, please open an issue on the [GitHub repository](https://github.com/CaseMark/iolta-manager/issues).
